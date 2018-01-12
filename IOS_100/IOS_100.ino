@@ -10,7 +10,7 @@
   2 = SDA for LCD control
   14 = SCL for LCD control
   13 = 1Wire Temperature com
-  5 = SSR Sauna Power Control (on board blue LED inverted)
+  5 = HEATER Sauna Power Control (on board blue LED inverted)
   4 = PWR power switch for turning it all on (has pulldown)
   12 = LCD_RED LED backlight 
   16 = LCD_GREEN LED backlight
@@ -21,7 +21,7 @@
   4 = SDA for LCD control
   5 = SCL for LCD control
   2 = 1Wire Temperature com
-  0 = SSR Sauna Power Control (on board blue LED inverted)
+  0 = HEATER Sauna Power Control (on board blue LED inverted)
   16 = PWR power switch for turning it all on
   14 = LCD_RED LED backlight 
   13 = LCD_GREEN LED backlight
@@ -44,7 +44,7 @@ EnergyMonitor escape;                   // Create an instance
 OneWire oneWire(ONE_WIRE_BUS);
 // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature sensors(&oneWire);
-int numberOfDevices; // Number of temperature devices found
+int oneWireDevices; // Number of temperature devices found
 //  using two thermomolators
 DeviceAddress Therm1, Therm2;
 boolean t1 = false;
@@ -55,7 +55,7 @@ float latest_t2 = 500.0;
 
 boolean schvitzing = false;
 
-int SSRstate = OFF;    
+int HEATERstate = OFF;    
 unsigned long lastTime = 0;
 unsigned long thisTime = 0;
 const long blinkTime = 500;
@@ -96,7 +96,7 @@ void setup() {
   countBirds();
 
   
-  testTemps();
+  getTemps();
   printStateToLCD();
   
 }
@@ -104,29 +104,30 @@ void setup() {
 
 void loop()
 {
-  toggleSSR();
+  checkPWRswitch();
   
-  if(testing){
-    if(millis() - testTime > testInterval){
-      testTime = millis();  
-//      testAmps();
-      testLCD_LEDs(); // scroll R,G,B
-//      fadeSeeds();  // fade red to blue
-//      Serial.println(testTime);
-    }
-  }
-
   if(schvitzing){
     if(millis() - schvitzTime > schvinterval){
       schvitzTime = millis();
-      testAmps();
-      testTemps();
+      getAmps();
+      getTemps();
       fadeLEDs(); // fade to temp reading
       printStateToLCD();
     }
   }
 
   serial();
+
+  if(testing){
+    if(millis() - testTime > testInterval){
+      testTime = millis();  
+//      getAmps();
+      testLCD_LEDs(); // scroll R,G,B
+//      fadeSeeds();  // fade red to blue
+//      Serial.println(testTime);
+    }
+  }
+  
 }
 
 
@@ -156,18 +157,13 @@ void serial(){
         Serial.println("starting test");
         break;
       case 'x':
-        testing = false;
-        Serial.println("stopping test");
-        LEDwhite();
+        endSchvitz();
         break;
       case 'i':
         Serial.print("Irms = "); Serial.println(currentOnly());
         break;
       case 's':
-        schvitzing = !schvitzing;
-        Serial.print("schvitzing = "); Serial.println(schvitzing);
-        printStateToLCD();
-        LEDwhite();
+        startSchvitz();
         break;
       case 'b':
         countBirds();
@@ -185,12 +181,12 @@ void serial(){
 }
 
 
-void toggleSSR(){
+void toggleHEATER(){
   thisTime = millis();
   if(thisTime - lastTime >= blinkTime) {
     lastTime = thisTime;   
-    SSRstate = !SSRstate;
-    digitalWrite(SSR,SSRstate);
+    HEATERstate = !HEATERstate;
+    digitalWrite(HEATER,HEATERstate);
   }
 }
 
@@ -201,7 +197,7 @@ double currentOnly(){
 
 void setThings(){
   pinMode(PWR,INPUT); 
-  pinMode(SSR,OUTPUT); digitalWrite(SSR,OFF);
+  pinMode(HEATER,OUTPUT); digitalWrite(HEATER,OFF);
   pinMode(LCD_RED,OUTPUT); pinMode(LCD_GREEN,OUTPUT); pinMode(LCD_BLUE,OUTPUT);
   LEDwhite();
 //  LEDoff();
@@ -210,7 +206,7 @@ void setThings(){
 
 
 
-void testAmps(){
+void getAmps(){
   thisI = currentOnly();
   if(thisI >= lastI+0.01 || thisI <= lastI-0.01){
     lastI = thisI;
@@ -244,13 +240,14 @@ void escapeInit(){
 }
 
 
-void testTemps(){
-    if(numberOfDevices > 0){  // change to 1wireDevices
+void getTemps(){
+    if(oneWireDevices > 0){  
       sensors.requestTemperatures();
       if(t1){
         Serial.print("t_1  ");
 //        printData(Therm1);
-        latest_t1 = printFahrenheit(Therm1);
+        latest_t1 = getFahrenheit(Therm1);
+        latest_t1 = constrain(latest_t1,-10.0,250.0);
         Serial.print(latest_t1);
         
       }else{
@@ -259,21 +256,53 @@ void testTemps(){
       if(t2){
         Serial.print("\tt_2  ");
 //        printData(Therm2);
-        latest_t2 = printFahrenheit(Therm2);
+        latest_t2 = getFahrenheit(Therm2);
+        latest_t2 = constrain(latest_t2,-10.0,250.0);
         Serial.println(latest_t2);
       } else {
         Serial.println("\tNo Therm2");
       }
     } else {
       Serial.println("No Thermomathings");
+      latest_t1 = latest_t2 = 0.0;
     }
   
 }
 
 
 void fadeLEDs(){
-  float f = map(latest_t1,0.0,120.0,1023.0,0.0);
-  setPWMfade(f);
-  Serial.print("fade "); Serial.println(f);
+//  if(t1){
+    float f = map(latest_t1,-10.0,250.0,1023.0,0.0);
+    setPWMfade(f);
+    Serial.print("fade "); Serial.println(f);
+//  } else {
+//    LEDwhite();
+//  }
+}
+
+void checkPWRswitch(){
+  int schwitch = digitalRead(PWR);
+  if(schwitch && !schvitzing){
+    startSchvitz();
+  }else if(!schwitch && schvitzing){
+    endSchvitz();
+  }
+}
+
+void startSchvitz(){
+  schvitzTime = millis();
+  schvitzing = true;
+  Serial.print("schvitzing = "); Serial.println(schvitzing);
+  digitalWrite(HEATER,ON);
+  printStateToLCD();
+}
+
+void endSchvitz(){
+  testing = false;
+  schvitzing = false;
+  digitalWrite(HEATER,OFF);
+  Serial.print("schvitzing = "); Serial.println(schvitzing);
+  printStateToLCD();
+  LEDwhite();
 }
 

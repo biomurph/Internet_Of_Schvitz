@@ -6,9 +6,9 @@ void countBirds(){
 
   // locate devices on the bus
   Serial.print("Locating thermomnometers...");
-  numberOfDevices = sensors.getDeviceCount();
+  oneWireDevices = sensors.getDeviceCount();
   Serial.print("Found ");
-  Serial.print(numberOfDevices, DEC);
+  Serial.print(oneWireDevices, DEC);
   Serial.println(" thermizors.");
 
   // report parasite power requirements
@@ -97,12 +97,13 @@ void printData(DeviceAddress deviceAddress)
   Serial.println();
 }
 
-float printFahrenheit(DeviceAddress deviceAddress)
+float getFahrenheit(DeviceAddress deviceAddress)
 {
   float tempC = sensors.getTempC(deviceAddress);
   return (DallasTemperature::toFahrenheit(tempC));
 }
-float printCelcius(DeviceAddress deviceAddress)
+
+float getCelcius(DeviceAddress deviceAddress)
 {
   float tempC = sensors.getTempC(deviceAddress);
   return tempC;

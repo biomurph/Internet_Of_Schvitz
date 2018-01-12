@@ -4,7 +4,7 @@
  *  PINS  
  */
  // THING
-//#define SSR 5     // Sauna Power Control
+//#define HEATER 5     // Sauna Power Control
 //#define WIRE  13   // 1Wire temp sensor com
 //#define PWR 4    // toggle switch for turning it all on
 //#define LCD_RED 12    // RED LED backlight 
@@ -13,7 +13,7 @@
 
 
 // FEATHER
-#define SSR 0     // Sauna Power Control
+#define HEATER 0     // Sauna Power Control
 #define WIRE  2   // 1Wire temp sensor com
 #define PWR 16    // toggle switch for turning it all on
 #define LCD_RED 14    // RED LED backlight 
