@@ -34,30 +34,29 @@
 #include "EmonLib.h"                 // Include Emon Library
 #include <Wire.h> // SDA 2>3 SCL 14>2
 #include "IOS_Defines.h"
+#include "API_key.h"
 
-EnergyMonitor escape;                   // Create an instance
+EnergyMonitor escape;                 // Create an Emon instance
 
-// Data wire is plugged into this pin
-#define ONE_WIRE_BUS 2
-//#define TEMPERATURE_PRECISION 9
-// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
-OneWire oneWire(ONE_WIRE_BUS);
-// Pass our oneWire reference to Dallas Temperature. 
-DallasTemperature sensors(&oneWire);
-int oneWireDevices; // Number of temperature devices found
-//  using two thermomolators
-DeviceAddress Therm1, Therm2;
-boolean t1 = false;
-boolean t2 = false;
-float latest_t1 = 500.0;
-float latest_t2 = 500.0;
+// Thermothing Stuff
+#define ONE_WIRE_BUS 2                // Data wire is plugged into this pin
+//#define TEMPERATURE_PRECISION 9       // Default should be 12?
+OneWire oneWire(ONE_WIRE_BUS);        // Setup a oneWire instance 
+DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature. 
+int oneWireDevices;                   // Number of temperature devices found
+DeviceAddress Therm1, Therm2;         // using two thermomolators
+boolean t1 = false;                   // used to tell if thermathing 1 is attached
+boolean t2 = false;                   // used to tell if thermathing 2 is attached
+float latest_t1 = -10.0;              // arbitrary temp to start
+float latest_t2 = -10.0;              // arbitrary temp to start
 
-
+//  Sauna Stuff
 boolean schvitzing = false;
-
 int HEATERstate = OFF;    
 unsigned long lastTime = 0;
 unsigned long thisTime = 0;
+
+// LED Stuff
 const long blinkTime = 500;
 int rgb = 0;
 int targetFade = 0;
@@ -83,41 +82,41 @@ int meanI;
 int sampleCounter;
 int sumI;
 
+// MQTT stuff
+ADAFRUIT_IO_KEY
+
 void setup() {
   Serial.begin(230400);
-  Wire.begin();
-  sensors.begin();
-  setThings();
-  printRules();
-  ST7036_init();
-  escapeInit();
-  
-  // Get report of oneWire devices on the wire
-  countBirds();
-
-  
-  getTemps();
-  printStateToLCD();
+  Wire.begin();       // begin OneWire
+  sensors.begin();    // begin Dallas tempo sensers
+  setThings();        // pin directions, LED color
+  printRules();      // serial command messages
+  ST7036_init();     // fire up the LCD
+  escapeInit();      // set things for the AC current sensor
+  countBirds();      // get report of oneWire devices on the wire
+  getTemps();        // get the first temp readings
+  printStateToLCD(); // print latest info to the LCD
   
 }
 
 
 void loop()
 {
-  checkPWRswitch();
+  checkPWRswitch(); // is the power switch on?
   
   if(schvitzing){
     if(millis() - schvitzTime > schvinterval){
       schvitzTime = millis();
-      getAmps();
-      getTemps();
-      fadeLEDs(); // fade to temp reading
-      printStateToLCD();
+      getAmps();            // get AC current reading
+      getTemps();           // get temp readings
+      fadeLEDs();           // fade to t1 reading (inside Sauna)
+      printStateToLCD();    // print latest info to LCD
     }
   }
 
-  serial();
+  serial();                 // go see if we have serial stuff to do
 
+// testing things
   if(testing){
     if(millis() - testTime > testInterval){
       testTime = millis();  
@@ -200,7 +199,6 @@ void setThings(){
   pinMode(HEATER,OUTPUT); digitalWrite(HEATER,OFF);
   pinMode(LCD_RED,OUTPUT); pinMode(LCD_GREEN,OUTPUT); pinMode(LCD_BLUE,OUTPUT);
   LEDwhite();
-//  LEDoff();
   
 }
 
@@ -264,7 +262,7 @@ void getTemps(){
       }
     } else {
       Serial.println("No Thermomathings");
-      latest_t1 = latest_t2 = 0.0;
+      latest_t1 = latest_t2 = -10.0;
     }
   
 }
