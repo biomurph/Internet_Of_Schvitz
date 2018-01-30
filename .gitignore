@@ -15,3 +15,4 @@ InternetOfSchvitz/IOS_02/LEDs.ino
 InternetOfSchvitz/IOS_02/oneWire.ino
 InternetOfSchvitz/IOS_TestBed/IOS_TestBed.ino
 IOS_100/API_key.h
+IOS_100/IO_config.h

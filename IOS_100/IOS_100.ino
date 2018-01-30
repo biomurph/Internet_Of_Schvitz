@@ -34,7 +34,7 @@
 #include "EmonLib.h"                 // Include Emon Library
 #include <Wire.h> // SDA 2>3 SCL 14>2
 #include "IOS_Defines.h"
-#include "API_key.h"
+#include "IO_config.h"
 
 EnergyMonitor escape;                 // Create an Emon instance
 
