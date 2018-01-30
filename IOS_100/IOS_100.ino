@@ -1,5 +1,5 @@
 /* 
-  Internet Of Schwitz
+  Internet Of Schvitz
   Target: SparkFun 8266 Thing Dev 
           Adafruit Feather
    
@@ -48,7 +48,9 @@ DeviceAddress Therm1, Therm2;         // using two thermomolators
 boolean t1 = false;                   // used to tell if thermathing 1 is attached
 boolean t2 = false;                   // used to tell if thermathing 2 is attached
 float latest_t1 = -10.0;              // arbitrary temp to start
+float last_t1 = -10.0;
 float latest_t2 = -10.0;              // arbitrary temp to start
+float last_t2 = -10.0;
 
 //  Sauna Stuff
 boolean schvitzing = false;
@@ -70,20 +72,20 @@ int n;  //mutipurpose LCD debugger
 char inChar;
 boolean testing = false;
 unsigned int testTime;
-int testInterval = 2000;
+int testInterval = 5000;
 int rawADC;
 
 unsigned long schvitzTime;
-long schvinterval = 500;
+long schvinterval = 2000;
 
 double lastI = 0;
-double thisI = 0;
+double Irms = 0;
 int meanI;
 int sampleCounter;
 int sumI;
 
 // MQTT stuff
-ADAFRUIT_IO_KEY
+//ADAFRUIT_IO_KEY
 
 void setup() {
   Serial.begin(230400);
@@ -103,36 +105,54 @@ void setup() {
 void loop()
 {
   checkPWRswitch(); // is the power switch on?
-  
-  if(schvitzing){
-    if(millis() - schvitzTime > schvinterval){
-      schvitzTime = millis();
-      getAmps();            // get AC current reading
-      getTemps();           // get temp readings
-      fadeLEDs();           // fade to t1 reading (inside Sauna)
-      printStateToLCD();    // print latest info to LCD
+
+  if(testing){  // testing things
+    readAndPrintIsensor();
+//    Serial.print("Irms "); Serial.println(calcIrms());
+    testing = false;
+    if(millis() - testTime > testInterval){
+      testTime = millis();  
+//      getAmps();
+//      testLCD_LEDs(); // scroll R,G,B
+//      fadeSeeds();  // fade red to blue
+//      Serial.println(testTime);
     }
+  } else {
+    schvitzLoop();
   }
 
   serial();                 // go see if we have serial stuff to do
 
-// testing things
-  if(testing){
-    if(millis() - testTime > testInterval){
-      testTime = millis();  
-//      getAmps();
-      testLCD_LEDs(); // scroll R,G,B
-//      fadeSeeds();  // fade red to blue
-//      Serial.println(testTime);
+}
+
+void schvitzLoop(){
+  if(millis() - schvitzTime >= schvinterval){
+    schvitzTime = millis();
+    if(schvitzing){
+//      getAmps();            // get AC current reading
+      getTemps();           // get temp readings
+      calcIrms();
+      fadeLEDs();           // fade to t1 reading (inside Sauna)
+      printToSerial();
+      printStateToLCD();    // print latest info to LCD
+    } else {
+      getTemps();
+      calcIrms();
+      printToSerial();
+      printStateToLCD();
     }
   }
-  
 }
 
 
-
-
-
+void printToSerial(){
+//  csv: temp1 | temp2 | AC_current | 
+  Serial.print(latest_t1); Serial.print("\t");
+  Serial.print(latest_t2); Serial.print("\t");
+  Serial.print(Irms); Serial.print("\t");
+//  Serial.print(latest_t1); Serial.print("\t");
+  Serial.println();
+}
 
 
 
@@ -154,6 +174,10 @@ void serial(){
         testTime = millis();
         sampleCounter = 0;
         Serial.println("starting test");
+        break;
+      case 'p':
+        testing = false;
+        Serial.println("end test");
         break;
       case 'x':
         endSchvitz();
@@ -205,14 +229,14 @@ void setThings(){
 
 
 void getAmps(){
-  thisI = currentOnly();
-  if(thisI >= lastI+0.01 || thisI <= lastI-0.01){
-    lastI = thisI;
-    Serial.print(thisI*PRIMARY_V);         // Apparent power P=VI
-    Serial.print("W, ");
-    Serial.print(thisI);          // Irms
-    Serial.println("A");
-  }
+//  thisI = currentOnly();
+//  if(thisI >= lastI+0.01 || thisI <= lastI-0.01){
+//    lastI = thisI;
+//    Serial.print(thisI*PRIMARY_V);         // Apparent power P=VI
+//    Serial.print("W, ");
+//    Serial.print(thisI);          // Irms
+//    Serial.println("A");
+//  }
 }
 
 
@@ -233,8 +257,8 @@ void printRules(){
 
 
 void escapeInit(){
-  escape.voltage(A0, PRIMARY_V, 0.6);   // Voltage: input pin, calibration, phase_shift
-  escape.current(A0, CALIBRATION);      // get current: input pin, calibration
+  escape.voltage(A0, PRIMARY_V, 0.6);   // Voltage: input pin, 205V, phase_shift
+  escape.current(A0, CALIBRATION);      // get current: input pin, 64.3
 }
 
 
@@ -242,23 +266,23 @@ void getTemps(){
     if(oneWireDevices > 0){  
       sensors.requestTemperatures();
       if(t1){
-        Serial.print("t_1  ");
+//        Serial.print("t_1  ");
 //        printData(Therm1);
         latest_t1 = getFahrenheit(Therm1);
         latest_t1 = constrain(latest_t1,-10.0,250.0);
-        Serial.print(latest_t1);
-        
-      }else{
-        Serial.println("No Therm1");
+//        Serial.print(latest_t1);
+//      }else{
+//        Serial.println("No Therm1");
       }
+//      Serial.print('\t');
       if(t2){
-        Serial.print("\tt_2  ");
+//        Serial.print("\tt_2  ");
 //        printData(Therm2);
         latest_t2 = getFahrenheit(Therm2);
         latest_t2 = constrain(latest_t2,-10.0,250.0);
-        Serial.println(latest_t2);
-      } else {
-        Serial.println("\tNo Therm2");
+//        Serial.println(latest_t2);
+//      } else {
+//        Serial.println("No Therm2");
       }
     } else {
       Serial.println("No Thermomathings");
@@ -272,7 +296,7 @@ void fadeLEDs(){
 //  if(t1){
     float f = map(latest_t1,-10.0,250.0,1023.0,0.0);
     setPWMfade(f);
-    Serial.print("fade "); Serial.println(f);
+//    Serial.print("fade "); Serial.println(f);
 //  } else {
 //    LEDwhite();
 //  }

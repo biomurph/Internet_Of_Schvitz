@@ -36,8 +36,8 @@
  * stuff to set the AC current sensor
  * 
  */
-#define CALIBRATION 64.3
-#define PRIMARY_V 220.0 
+#define CALIBRATION 64.3  // see AC_Current_Notes.h
+#define PRIMARY_V 205.0   // empirically tested at measurement site
 
 
 #define TEST_INT 1024

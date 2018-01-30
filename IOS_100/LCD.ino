@@ -9,7 +9,7 @@ void printStateToLCD(){  // float inTemp, float outTemp, float amps){
   LCD_Command(HOME_CMD);    // MOVE HOME
   if(schvitzing){
     LCD_printStr("Schvitzing! :)");
-    LCD_printFloat(thisI);
+    LCD_printFloat(Irms);
     LCD_printStr("A");
   } else {
     LCD_printStr("Not Schvitzing, :(");
@@ -52,10 +52,11 @@ void printStateToLCD(){  // float inTemp, float outTemp, float amps){
 // send a command to the LCD screen
 void LCD_Command(byte data){  
 
- Wire.beginTransmission(LCD_ADDRESS);
- Wire.write(DISP_CMD);
- Wire.write(data);
- checkWireStatus(Wire.endTransmission());
+  Wire.beginTransmission(LCD_ADDRESS);
+  Wire.write(DISP_CMD);
+  Wire.write(data);
+// checkWireStatus(Wire.endTransmission());
+  Wire.endTransmission();
  delay(1);
  
 }
@@ -67,7 +68,8 @@ void LCD_printStr(String x){
   for (int s=0; s<=x.length(); s++){
     Wire.write(x.charAt(s));                  // write ascii
   }
-  checkWireStatus(Wire.endTransmission());
+//  checkWireStatus(Wire.endTransmission());
+  Wire.endTransmission();
   delay(1);
 }
 
@@ -94,7 +96,8 @@ void LCD_printInt(int x){
   Wire.write(intBuffer[i]);
 //  Serial.println(intBuffer[i] - '0');
   }
-  checkWireStatus(Wire.endTransmission());
+//  checkWireStatus(Wire.endTransmission());
+  Wire.endTransmission();
   delay(1);
 }
 
@@ -129,7 +132,8 @@ void LCD_printFloat(float f){
   Wire.write(Buffer[i]);
 //  Serial.println(Buffer[i] - '0');
   }
-  checkWireStatus(Wire.endTransmission());
+//  checkWireStatus(Wire.endTransmission());
+  Wire.endTransmission();
   delay(1);
 }
 
@@ -150,7 +154,8 @@ void ST7036_init(){
   Wire.write(CLEAR_DISP_CMD);    // CLEAR DISPLAY
   Wire.write(HOME_CMD);    // MOVE HOME
   Wire.write(0x06);    //Cursor move on, Display shift off
-  checkWireStatus(Wire.endTransmission());
+//  checkWireStatus(Wire.endTransmission());
+  Wire.endTransmission();
 
    if(LCD_initialised){
      LCD_Command(HOME_CMD);
@@ -177,15 +182,15 @@ void LCD_format(int l, byte pos){
 }
 
 // look for LCD I2C errors
-void checkWireStatus(int stat){
-
-  if ( stat == 0 )
-   {
-      LCD_initialised = true;
-   }else{
-    Serial.print(" ! LCD Status "); Serial.println(LCD_status,DEC);
-    LCD_initialised = false;
-   }
-}
+//void checkWireStatus(int stat){
+//
+//  if ( stat == 0 )
+//   {
+//      LCD_initialised = true;
+//   }else{
+//    Serial.print(" ! LCD Status "); Serial.println(LCD_status,DEC);
+//    LCD_initialised = false;
+//   }
+//}
 
 

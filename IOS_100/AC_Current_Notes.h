@@ -15,12 +15,11 @@
     Settle on 22Ω on the short side
 
 
-  CT Ratio / Burden resistance 
+  Calibration = CT Ratio / Burden resistance 
   (30A / 0.02121A) / 22 Ohms = 64.29
 
     More cray here https://learn.openenergymonitor.org/electricity-monitoring/ctac/calibration
 
-    
  * 
  * 
  * 
