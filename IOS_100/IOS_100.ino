@@ -1,3 +1,5 @@
+
+
 /* 
   Internet Of Schvitz
   Target: SparkFun 8266 Thing Dev 
@@ -29,6 +31,9 @@
 
 */
 
+#include <ESP8266WiFi.h>
+#include "Adafruit_MQTT.h"
+#include "Adafruit_MQTT_Client.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
 #include "EmonLib.h"                 // Include Emon Library
@@ -76,7 +81,7 @@ int testInterval = 5000;
 int rawADC;
 
 unsigned long schvitzTime;
-long schvinterval = 2000;
+long schvinterval = 5000;
 
 double lastI = 0;
 double Irms = 0;
@@ -84,8 +89,30 @@ int meanI;
 int sampleCounter;
 int sumI;
 
-// MQTT stuff
-//ADAFRUIT_IO_KEY
+// Adafruit IO Stuff
+/************ Global State (you don't need to change this!) ******************/
+
+// Create an ESP8266 WiFiClient class to connect to the MQTT server.
+WiFiClient client;
+// or... use WiFiFlientSecure for SSL
+//WiFiClientSecure client;
+
+// Setup the MQTT client class by passing in the WiFi client and MQTT server and login details.
+Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
+
+/****************************** Feeds ***************************************/
+
+// Setup a feed called 'insideSauna' for publishing.
+// Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
+Adafruit_MQTT_Publish insideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/insideSauna");
+Adafruit_MQTT_Publish outsideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/outsideSauna");
+Adafruit_MQTT_Publish heaterCurrent = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/heaterCurrent");
+
+/*************************** Sketch Code ************************************/
+
+// Bug workaround for Arduino 1.6.6, it seems to need a function declaration
+// for some reason (only affects ESP8266, likely an arduino-builder bug).
+void MQTT_connect();
 
 void setup() {
   Serial.begin(230400);
@@ -98,6 +125,22 @@ void setup() {
   countBirds();      // get report of oneWire devices on the wire
   getTemps();        // get the first temp readings
   printStateToLCD(); // print latest info to the LCD
+
+  // Connect to WiFi access point.
+  Serial.println(); Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(WLAN_SSID);
+
+  WiFi.begin(WLAN_SSID, WLAN_PASS);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println();
+
+  Serial.println("WiFi connected");
+  Serial.println("IP address: "); Serial.println(WiFi.localIP());
+
   
 }
 
@@ -119,6 +162,7 @@ void loop()
     }
   } else {
     schvitzLoop();
+    
   }
 
   serial();                 // go see if we have serial stuff to do
@@ -141,6 +185,7 @@ void schvitzLoop(){
       printToSerial();
       printStateToLCD();
     }
+    sendToIO():
   }
 }
 
@@ -326,5 +371,50 @@ void endSchvitz(){
   Serial.print("schvitzing = "); Serial.println(schvitzing);
   printStateToLCD();
   LEDwhite();
+}
+
+void sendToIO(){
+  if (! insideSauna.publish(latest_t2)) {
+    Serial.println(F("t2 Failed"));
+  } else {
+    Serial.println(F("t2 OK!"));
+  }
+  if (! outsideSauna.publish(latest_t1)) {
+    Serial.println(F("t1 Failed"));
+  } else {
+    Serial.println(F("t1 OK!"));
+  }
+  if (! heaterCurrent.publish(Irms)) {
+    Serial.println(F("Irms Failed"));
+  } else {
+    Serial.println(F("Irms OK!"));
+  }
+}
+
+// Function to connect and reconnect as necessary to the MQTT server.
+// Should be called in the loop function and it will take care if connecting.
+void MQTT_connect() {
+  int8_t ret;
+
+  // Stop if already connected.
+  if (mqtt.connected()) {
+    return;
+  }
+
+  Serial.print("Connecting to MQTT... ");
+
+  uint8_t retries = 3;
+  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
+       Serial.println(mqtt.connectErrorString(ret));
+       Serial.println("Retrying MQTT connection in 5 seconds...");
+       mqtt.disconnect();
+       delay(5000);  // wait 5 seconds
+       retries--;
+       if (retries == 0) {
+         // basically die and wait for WDT to reset me
+         while (1);
+       }
+  }
+  Serial.println("MQTT Connected!");
 }
 

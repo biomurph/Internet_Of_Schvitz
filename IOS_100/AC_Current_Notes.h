@@ -1,11 +1,11 @@
 /*
  * Convert maximum RMS current to peak-current by multiplying by √2.
-     Primary_peak-current = √2 x RMS_Peak_current
+     Primary peak current = √2 x Primary RMS_Peak_current
      1.414 x 30 A = 42.42A
 
   Divide the Primary_peak-current by the number of turns in the CT to give the peak-current in the secondary coil
     The YHDC SCT-013-000 CT has 2000 turns, so the secondary peak current will be:
-    Secondary peak-current = Primary peak-current / no. of turns
+    Secondary peak current = Primary peak current / no. of turns
     42.42A / 2000 = 0.02121A
 
   To maximise measurement resolution, the voltage across the burden resistor at peak-current should = 0.5 of AREF ~1V
