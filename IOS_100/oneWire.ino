@@ -12,7 +12,7 @@ void countBirds(){
   Serial.println(" thermizors.");
 
   // report parasite power requirements
-  Serial.print("Parasitic power is: "); 
+  Serial.print("Parasitic power is: ");
   if (sensors.isParasitePowerMode()) Serial.println("ON");
   else Serial.println("OFF");
 
@@ -34,7 +34,7 @@ void countBirds(){
   Serial.print("Device 1 Address: ");
   printAddress(Therm2);
   Serial.println();
-  
+
   Serial.print("Device 0 Resolution: ");
   Serial.print(sensors.getResolution(Therm1), DEC);
   Serial.println();
@@ -100,6 +100,7 @@ void printData(DeviceAddress deviceAddress)
 float getFahrenheit(DeviceAddress deviceAddress)
 {
   float tempC = sensors.getTempC(deviceAddress);
+  // return (tempC * 1.8) + 32;
   return (DallasTemperature::toFahrenheit(tempC));
 }
 
@@ -108,4 +109,3 @@ float getCelcius(DeviceAddress deviceAddress)
   float tempC = sensors.getTempC(deviceAddress);
   return tempC;
 }
-

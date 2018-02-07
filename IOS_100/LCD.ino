@@ -15,14 +15,14 @@ void printStateToLCD(){  // float inTemp, float outTemp, float amps){
     LCD_printStr("Not Schvitzing, :(");
   }
   LCD_format(1,0x01);
-  LCD_printStr("t1");
+  LCD_printStr("out"); // t1
   if(t1){
     LCD_printFloat(latest_t1);
   } else {
     LCD_printStr("XXxX");
   }
   LCD_format(1,0x0B);
-  LCD_printStr("t2");
+  LCD_printStr("in");  // t2
   if(t2){
     LCD_printFloat(latest_t2);
   } else {
@@ -31,9 +31,9 @@ void printStateToLCD(){  // float inTemp, float outTemp, float amps){
 }
 
 
-//byte LCD_Read(int n){  
-//  byte DATA;  
-//  
+//byte LCD_Read(int n){
+//  byte DATA;
+//
 //  Wire.beginTransmission(LCD_ADDRESS);
 //  Wire.write(DISP_CMD);
 //  Wire.endTransmission();
@@ -50,7 +50,7 @@ void printStateToLCD(){  // float inTemp, float outTemp, float amps){
 
 
 // send a command to the LCD screen
-void LCD_Command(byte data){  
+void LCD_Command(byte data){
 
   Wire.beginTransmission(LCD_ADDRESS);
   Wire.write(DISP_CMD);
@@ -58,7 +58,7 @@ void LCD_Command(byte data){
 // checkWireStatus(Wire.endTransmission());
   Wire.endTransmission();
  delay(1);
- 
+
 }
 
 // print a string to the LCD screen
@@ -78,9 +78,9 @@ void LCD_printInt(int x){
 //  Serial.println("in LCD_printInt()");
   boolean digits = true;
   int digitCounter = 0;
-  byte thisDigit;    
+  byte thisDigit;
   char intBuffer[5];
-  while(digits){  
+  while(digits){
     intBuffer[digitCounter] = x%10;
     intBuffer[digitCounter] += '0';
     digitCounter++;
@@ -106,17 +106,17 @@ void LCD_printFloat(float f){
 //  Serial.println("in printFloat()");
   boolean digits = true;
   int digitCounter = 0;
-  byte thisDigit;    
+  byte thisDigit;
   char Buffer[5];
   int convertedF = int(f);
   float tenths = (f - convertedF)*10;
-  
+
   Buffer[digitCounter] = char(tenths)%10;
   Buffer[digitCounter] += '0';
   digitCounter++;
   Buffer[digitCounter] = '.';
   digitCounter++;
-  while(digits){  
+  while(digits){
     Buffer[digitCounter] = convertedF%10;
     Buffer[digitCounter] += '0';
     digitCounter++;
@@ -138,10 +138,10 @@ void LCD_printFloat(float f){
 }
 
 
-// initialize LCD screen 
-void ST7036_init(){  
+// initialize LCD screen
+void ST7036_init(){
   Wire.beginTransmission(LCD_ADDRESS);  // 0x78
-  Wire.write(DISP_CMD);    
+  Wire.write(DISP_CMD);
   Wire.write(0x38);    // Function Set (8-bit,2-line,height0,selectTable 00)
   delay(10);
   Wire.write(0x39);    // Function Set (8-bit,2-line,height0,selectTable 01)
@@ -192,5 +192,3 @@ void LCD_format(int l, byte pos){
 //    LCD_initialised = false;
 //   }
 //}
-
-

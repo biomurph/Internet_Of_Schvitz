@@ -27,23 +27,34 @@ void readAndPrintIsensor(){
 
 
 float calcIrms(){
-  unsigned long sample, start;
-  int newSample;
-  int sampleCount = 0;
-  long sumI = 0;
-  
+
+  sampleCount = 0;
+  sumI = 0;
   start = millis();
   sample = micros();
+  
   while(millis() - start < 1000){
-    if(micros() - sample >= 2000){
+    if(micros() - sample >= 1000){
       sample = micros();
       newSample = analogRead(A0);
-      newSample -= offset;
+      newSample -= OFFSET;  // 524
       float sampleSq = float(newSample * newSample);
       sumI += sampleSq;
       sampleCount++;
     }
   }
   Irms = sqrt(sumI/sampleCount);
+//  Serial.print("\t"); Serial.print(Irms); Serial.print("\t");
+  Irms *= 1.414;
+  Irms /= 512.0;
+  Irms *= 30.0;
+//  Serial.print(Irms); Serial.print("\t");
+//  Serial.print(Irms); Serial.print("\t");
+//  Serial.println();
   return Irms;
 }
+
+/*
+ *  rms/512 = Irms/30
+ *
+ */

@@ -36,13 +36,14 @@
  * stuff to set the AC current sensor
  * 
  */
-#define CALIBRATION 64.3  // see AC_Current_Notes.h
-#define PRIMARY_V 205.0   // empirically tested at measurement site
-
+//#define CALIBRATION 64.3  // see AC_Current_Notes.h
+//#define PRIMARY_V 205.0   // empirically tested at measurement site
+#define OFFFSET 524       // found emperically
 
 #define TEST_INT 1024
 #define TEST_FLOAT 10.24
 
+// LCD Display stuff
 #define LCD_ADDRESS 0x3C  // 0x78 
 #define DISP_CMD  0x00
 #define SET_DDRAM_CMD  = 0x80
