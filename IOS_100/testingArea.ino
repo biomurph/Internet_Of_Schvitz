@@ -1,6 +1,5 @@
 
 
-int offset = 524;
 
 void readAndPrintIsensor(){
   unsigned long sample, start;
