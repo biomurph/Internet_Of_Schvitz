@@ -2,8 +2,7 @@
 
 /*
   Internet Of Schvitz
-  Target: SparkFun 8266 Thing Dev
-          Adafruit Feather
+  Target: Adafruit Feather HUZZAH ESP8266
 
   Bath Controller par excellence
 
@@ -84,12 +83,12 @@ int rawADC;
 
 // Schvitz related
 unsigned long schvitzTime;
-long schvinterval = 5000;
+long schvinterval = 10000; // milliseconds
 
 // AC current related
 double lastI = 0;
 double Irms = 0;
-int sumI;
+//int sumI;
 unsigned long sample, start;
 int newSample;
 int sampleCount = 0;
@@ -110,9 +109,9 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO
 
 // Setup a feed called 'insideSauna' for publishing.
 // Notice MQTT paths for AIO follow the form: <username>/feeds/<feedname>
-Adafruit_MQTT_Publish insideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/insideSauna");
-Adafruit_MQTT_Publish outsideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/outsideSauna");
-Adafruit_MQTT_Publish heaterCurrent = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/heaterCurrent");
+Adafruit_MQTT_Publish insideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/internet-of-schvitz.insidesauna");
+Adafruit_MQTT_Publish outsideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/internet-of-schvitz.outsidesauna");
+Adafruit_MQTT_Publish heaterCurrent = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/internet-of-schvitz.heatercurrent");
 
 /*************************** Sketch Code ************************************/
 
@@ -187,69 +186,9 @@ void schvitzLoop(){
     } else {
       LEDwhite();  
     }
-//    sendToIO(); // broken?
+    sendToIO();
   }
 }
-
-
-void printToSerial(){
-//  csv: temp1 | temp2 | AC_current |
-  Serial.print(latest_t1); Serial.print("\t");
-  Serial.print(latest_t2); Serial.print("\t");
-  Serial.print(Irms); Serial.print("\t");
-  
-  Serial.println();
-}
-
-
-
-void serial(){
-  while(Serial.available()){
-    inChar = Serial.read();
-
-    switch(inChar){
-
-      case'?':
-        printRules();
-        break;
-      case 'a':
-        rawADC = analogRead(A0);
-        Serial.print("rawADC = "); Serial.println(rawADC);
-        break;
-      case 't':
-        testing = true;
-        testTime = millis();
-        sampleCounter = 0;
-        Serial.println("starting test");
-        break;
-      case 'p':
-        testing = false;
-        Serial.println("end test");
-        break;
-      case 'x':
-        endSchvitz();
-        break;
-      case 'i':
-        Serial.print("Irms = "); Serial.println(Irms);
-        break;
-      case 's':
-        startSchvitz();
-        break;
-      case 'b':
-        countBirds();
-        break;  // beak;
-      case 'd':  // for degrees...
-        Serial.println("getting temps... ");
-        sensors.requestTemperatures();
-        printData(Therm1);
-        printData(Therm2);
-        break;
-      default: Serial.print("echo "); Serial.println(inChar);
-        break;
-    }
-  }
-}
-
 
 void toggleHEATER(){
   thisTime = millis();
@@ -287,19 +226,7 @@ void setThings(){
 //}
 
 
-void printRules(){
-  Serial.println("\nInternet Of Schvitz  v1.0.0");
 
-        Serial.println("Press 'a' to get raw ADC reading");
-        Serial.println("Press 't' to start test");
-        Serial.println("Press 'x' to soft reset");
-        Serial.println("Press 'i' to run currentOnly()");
-        Serial.println("Press 's' to schvitz!");
-        Serial.println("Press 'b' to find 1 wire temp sensors");
-        Serial.println("Press 'd' to measure degrees");
-//        Serial.println("");
-        Serial.println("Press ? to print this again");
-}
 
 
 
@@ -375,47 +302,4 @@ void endSchvitz(){
   LEDwhite();
 }
 
-void sendToIO(){
-  if (! insideSauna.publish(latest_t2)) {
-    Serial.println(F("IO: t2 Failed"));
-  } else {
-    Serial.println(F("IO: t2 OK!"));
-  }
-  if (! outsideSauna.publish(latest_t1)) {
-    Serial.println(F("IO: t1 Failed"));
-  } else {
-    Serial.println(F("IO: t1 OK!"));
-  }
-  if (! heaterCurrent.publish(Irms)) {
-    Serial.println(F("IO: Irms Failed"));
-  } else {
-    Serial.println(F("IO: Irms OK!"));
-  }
-}
 
-// Function to connect and reconnect as necessary to the MQTT server.
-// Should be called in the loop function and it will take care if connecting.
-void MQTT_connect() {
-  int8_t ret;
-
-  // Stop if already connected.
-  if (mqtt.connected()) {
-    return;
-  }
-
-  Serial.print("Connecting to MQTT... ");
-
-  uint8_t retries = 3;
-  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
-       Serial.println(mqtt.connectErrorString(ret));
-       Serial.println("Retrying MQTT connection in 5 seconds...");
-       mqtt.disconnect();
-       delay(5000);  // wait 5 seconds
-       retries--;
-       if (retries == 0) {
-         // basically die and wait for WDT to reset me
-         while (1);
-       }
-  }
-  Serial.println("MQTT Connected!");
-}

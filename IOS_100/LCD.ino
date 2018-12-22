@@ -15,14 +15,14 @@ void printStateToLCD(){  // float inTemp, float outTemp, float amps){
     LCD_printStr("Not Schvitzing, :(");
   }
   LCD_format(1,0x01);
-  LCD_printStr("out"); // t1
+  LCD_printStr("in"); // t1
   if(t1){
     LCD_printFloat(latest_t1);
   } else {
     LCD_printStr("XXxX");
   }
   LCD_format(1,0x0B);
-  LCD_printStr("in");  // t2
+  LCD_printStr("out");  // t2
   if(t2){
     LCD_printFloat(latest_t2);
   } else {
