@@ -1,26 +1,14 @@
 
-boolean rising = true;
-void fadeSeeds(){
-    if(rising){
-      targetFade++;
-    } else {
-      targetFade--;
-    }
-    targetFade = constrain(targetFade,0,1023);
-    if(targetFade == 1023){
-      rising = false;
-    }else if(targetFade == 0){
-      rising = true;
-    }
-    
-    setPWMfade(targetFade);
+void fadeLEDs(){
+    float f = map(latest_t1,-10.0,250.0,1023.0,0.0);
+    setPWMfade(f);
 }
 
 void setPWMfade(float _t){
-//  int t = _t; // expects _t to be 0<>1023
+  int t = _t; // expects _t to be 0<>1023
   
   for(int i=0; i<3; i++){
-    targetPWM[i] = int(map(_t, 0,1023, seed0[i],seed1[i]));
+    targetPWM[i] = int(map(t, 0,1023, seed0[i],seed1[i]));
     analogWrite(targetLED[i],targetPWM[i]);
 //    Serial.print(targetLED[i]); Serial.print(", "); 
 //    Serial.print(targetPWM[i]); Serial.print("\t");
@@ -29,7 +17,11 @@ void setPWMfade(float _t){
 
 }
 
-
+void LEDwhite(){
+  analogWrite(LCD_RED,MAX_LED);
+  analogWrite(LCD_GREEN,MAX_LED);
+  analogWrite(LCD_BLUE,MAX_LED);  
+}
 
 void testLCD_LEDs(){
   rgb++;
@@ -53,13 +45,6 @@ void testLCD_LEDs(){
     break;
     default: break;
   }
-}
-
-
-void LEDwhite(){
-  analogWrite(LCD_RED,MAX_LED);
-  analogWrite(LCD_GREEN,MAX_LED);
-  analogWrite(LCD_BLUE,MAX_LED);  
 }
 
 void LEDoff(){

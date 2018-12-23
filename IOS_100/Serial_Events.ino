@@ -24,7 +24,7 @@ void printToSerial(){
   Serial.println();
 }
 
-void serial(){
+void checkSerial(){
   while(Serial.available()){
     inChar = Serial.read();
 

@@ -35,32 +35,29 @@
 #include "Adafruit_MQTT_Client.h"
 #include <OneWire.h>
 #include <DallasTemperature.h>
-//#include "EmonLib.h"                 // Include Emon Library
 #include <Wire.h> // SDA 2>3 SCL 14>2
 #include "IOS_Defines.h"
-#include "IO_config.h"  // magic numbers
+#include "MQTT_Config.h"
 
-//EnergyMonitor escape;                 // Create an Emon instance
 
 // Thermothing Stuff
 #define ONE_WIRE_BUS 2                // Data wire is plugged into this pin
-//#define TEMPERATURE_PRECISION 9       // Default should be 12
 OneWire oneWire(ONE_WIRE_BUS);        // Setup a oneWire instance
 DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
 int oneWireDevices;                   // Number of temperature devices found
 DeviceAddress Therm1, Therm2;         // using two thermomolators
 boolean t1 = false;                   // used to tell if thermathing 1 is attached
 boolean t2 = false;                   // used to tell if thermathing 2 is attached
-float latest_t1 = 0.0;              // arbitrary temp to start
+float latest_t1 = 0.0;                // arbitrary temp to start
 float last_t1 = 0.0;
-float latest_t2 = 0.0;              // arbitrary temp to start
+float latest_t2 = 0.0;                // arbitrary temp to start
 float last_t2 = 0.0;
 
 //  Sauna Stuff
 boolean schvitzing = false;
 int HEATERstate = OFF;
-unsigned long lastTime = 0;
-unsigned long thisTime = 0;
+unsigned long schvitzTime;
+long schvinterval = 20000; // milliseconds
 
 // LED Stuff
 const long blinkTime = 500;
@@ -81,18 +78,22 @@ unsigned int testTime;
 int testInterval = 5000;
 int rawADC;
 
-// Schvitz related
-unsigned long schvitzTime;
-long schvinterval = 10000; // milliseconds
+
 
 // AC current related
 double lastI = 0;
 double Irms = 0;
-//int sumI;
-unsigned long sample, start;
+float Irms10x;
+unsigned long sample, startTime;
 int newSample;
 int sampleCount = 0;
 double sumI = 0;
+
+// WiFi Stuff
+boolean WiFiConnected = false;
+boolean MQTTconnected = false;
+unsigned long WiFiDisconnectTime;
+unsigned long MQTTdisconnectTime;
 
 // Adafruit IO Stuff
 /************ Global State (you don't need to change this!) ******************/
@@ -117,7 +118,7 @@ Adafruit_MQTT_Publish heaterCurrent = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME 
 
 // Bug workaround for Arduino 1.6.6, it seems to need a function declaration
 // for some reason (only affects ESP8266, likely an arduino-builder bug).
-void MQTT_connect();
+//void MQTT_connect();
 
 void setup() {
   Serial.begin(230400);
@@ -126,51 +127,21 @@ void setup() {
   setThings();        // pin directions, LED color
   printRules();       // serial print key commands
   ST7036_init();      // fire up the LCD
-  // escapeInit();       // set things for the AC current sensor
   countBirds();       // get report of oneWire devices on the wire
   getTemps();         // get the first temp readings
+  WiFiConnect();      // try to connect to the WiFi access point
   printStateToLCD();  // print latest info to the LCD
-
-  // Connect to WiFi access point.
-  Serial.println(); Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(WLAN_SSID);
-
-  WiFi.begin(WLAN_SSID, WLAN_PASS);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  Serial.println();
-
-  Serial.println("WiFi connected");
-  Serial.println("IP address: "); Serial.println(WiFi.localIP());
-
 
 }
 
 
 void loop()
 {
-  checkPWRswitch(); // is the power switch on?
+  checkPWRswitch(); // is the sauna power switch on?
 
-  if(testing){  // testing things
-    readAndPrintIsensor();
-//    Serial.print("Irms "); Serial.println(calcIrms());
-    testing = false;
-    if(millis() - testTime > testInterval){
-      testTime = millis();
-//      getAmps();
-//      testLCD_LEDs(); // scroll R,G,B
-//      fadeSeeds();  // fade red to blue
-//      Serial.println(testTime);
-    }
-  } else {
-    schvitzLoop();
+  schvitzLoop();    // measure stuff and send data to other people's computers
 
-  }
-
-  serial();                 // go see if we have serial stuff to do
+  checkSerial();    // go see if we have serial stuff to do
 
 }
 
@@ -178,31 +149,19 @@ void schvitzLoop(){
   if(millis() - schvitzTime >= schvinterval){
     schvitzTime = millis();
     getTemps();           // get temp readings
-    calcIrms();
+    Irms10x = calcIrms()*10.0;
     printToSerial();
     printStateToLCD();    // print latest info to LCD
     if(schvitzing){
-      fadeLEDs();           // fade to t2 reading (inside Sauna)
+      fadeLEDs();         // fade to t1 reading (inside Sauna)
     } else {
       LEDwhite();  
     }
-    sendToIO();
+    if(MQTT_connect){
+      sendToIO();
+    }
   }
 }
-
-void toggleHEATER(){
-  thisTime = millis();
-  if(thisTime - lastTime >= blinkTime) {
-    lastTime = thisTime;
-    HEATERstate = !HEATERstate;
-    digitalWrite(HEATER,HEATERstate);
-  }
-}
-
-//double currentOnly(){
-//    double Irms = escape.calcIrms(1480);  // Calculate Irms only for that many samples
-//    return Irms;
-//}
 
 void setThings(){
   pinMode(PWR,INPUT);
@@ -214,67 +173,6 @@ void setThings(){
 
 
 
-//void getAmps(){
-//  thisI = currentOnly();
-//  if(thisI >= lastI+0.01 || thisI <= lastI-0.01){
-//    lastI = thisI;
-//    Serial.print(thisI*PRIMARY_V);         // Apparent power P=VI
-//    Serial.print("W, ");
-//    Serial.print(thisI);          // Irms
-//    Serial.println("A");
-//  }
-//}
-
-
-
-
-
-
-//void escapeInit(){
-//  escape.voltage(A0, PRIMARY_V, 0.6);   // Voltage: input pin, 205V, phase_shift
-//  escape.current(A0, CALIBRATION);      // get current: input pin, 64.3
-//}
-
-
-void getTemps(){
-    if(oneWireDevices > 0){
-      sensors.requestTemperatures();
-      if(t1){
-//        Serial.print("t_1  ");
-//        printData(Therm1);
-        latest_t1 = getFahrenheit(Therm1);
-        latest_t1 = constrain(latest_t1,-10.0,250.0);
-//        Serial.print(latest_t1);
-//      }else{
-//        Serial.println("No Therm1");
-      }
-//      Serial.print('\t');
-      if(t2){
-//        Serial.print("\tt_2  ");
-//        printData(Therm2);
-        latest_t2 = getFahrenheit(Therm2);
-        latest_t2 = constrain(latest_t2,-10.0,250.0);
-//        Serial.println(latest_t2);
-//      } else {
-//        Serial.println("No Therm2");
-      }
-    } else {
-      Serial.println("No Thermomathings");
-      latest_t1 = latest_t2 = -10.0;
-    }
-
-}
-
-
-void fadeLEDs(){
-//  if(t1){
-    float f = map(latest_t2,-10.0,250.0,1023.0,0.0);
-    setPWMfade(f);
-//    Serial.print("fade "); Serial.println(f);
-//  } else {
-//    LEDwhite();
-//  }
-}
 
 void checkPWRswitch(){
   int schwitch = digitalRead(PWR);
@@ -286,7 +184,7 @@ void checkPWRswitch(){
 }
 
 void startSchvitz(){
-  schvitzTime = millis();
+  schvitzTime = millis() - schvinterval;
   schvitzing = true;
   Serial.print("schvitzing = "); Serial.println(schvitzing);
   digitalWrite(HEATER,ON);

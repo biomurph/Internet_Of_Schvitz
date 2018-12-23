@@ -1,18 +1,34 @@
 
+/*
+ * LCD = Newhaven Display NHD-C0220BiZ-FS(RGB)-FBW-3VM
+ * https://www.mouser.com/ProductDetail/Newhaven-Display/NHD-C0220BiZ-FSRGB-FBW-3VM?qs=sGAEpiMZZMt7dcPGmvnkBpFZcopQduFAmHLiSrtB%2f3w%3d
+ * 20 characters by 2 lines
+ * 
+ */
 
 byte LCD_status;
 boolean LCD_initialised = false;
 
 
-void printStateToLCD(){  // float inTemp, float outTemp, float amps){
+void printStateToLCD(){ 
   LCD_Command(CLEAR_DISP_CMD);    // CLEAR DISPLAY
   LCD_Command(HOME_CMD);    // MOVE HOME
-  if(schvitzing){
-    LCD_printStr("Schvitzing! :)");
-    LCD_printFloat(Irms);
-    LCD_printStr("A");
-  } else {
-    LCD_printStr("Not Schvitzing, :(");
+  if(!WiFiConnected){
+    int timeOffLine = (millis()-WiFiDisconnectTime)/1000;
+    LCD_printStr("WiFi Error ");
+    LCD_printInt(timeOffLine);
+  }else if(!MQTTconnected){
+    int timeOffLine = (millis()-MQTTdisconnectTime)/1000;
+    LCD_printStr("MQTT Error ");
+    LCD_printInt(timeOffLine);
+  }else{
+    if(schvitzing){
+      LCD_printStr("Schvitzing! :)");
+      LCD_printFloat(Irms);
+      LCD_printStr("A");
+    } else {
+      LCD_printStr("Not Schvitzing :(");
+    }
   }
   LCD_format(1,0x01);
   LCD_printStr("in"); // t1
@@ -29,23 +45,6 @@ void printStateToLCD(){  // float inTemp, float outTemp, float amps){
     LCD_printStr("XXxX");
   }
 }
-
-
-//byte LCD_Read(int n){
-//  byte DATA;
-//
-//  Wire.beginTransmission(LCD_ADDRESS);
-//  Wire.write(DISP_CMD);
-//  Wire.endTransmission();
-//  Wire.requestFrom(LCD_ADDRESS,n);
-////  Wire.write(0x00);
-//  while(Wire.available())
-//  {
-//   DATA = Wire.read();
-//  // DATA = Wire.receive();
-//  }
-//  return(DATA);
-//}
 
 
 
@@ -157,14 +156,14 @@ void ST7036_init(){
 //  checkWireStatus(Wire.endTransmission());
   Wire.endTransmission();
 
-   if(LCD_initialised){
+   if(LCD_initialised){ // use checkWireStatus to run this splash screen
      LCD_Command(HOME_CMD);
      LCD_printStr("Internet Of Schvitz");
      LCD_Command(LINE_2);
      LCD_printStr("v 1.0.0");
-     delay(3000);
+     delay(5000);
    } else {
-     Serial.println("not initialized");
+     Serial.println("LCD not initialized");
    }
 }
 

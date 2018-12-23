@@ -1,6 +1,33 @@
 
 
+void getTemps(){
+    if(oneWireDevices > 0){
+      sensors.requestTemperatures();
+      if(t1){
+//        Serial.print("t_1  ");
+//        printData(Therm1);
+        latest_t1 = getFahrenheit(Therm1);
+        latest_t1 = constrain(latest_t1,-10.0,250.0);
+//        Serial.print(latest_t1);
+//      }else{
+//        Serial.println("No Therm1");
+      }
+//      Serial.print('\t');
+      if(t2){
+//        Serial.print("\tt_2  ");
+//        printData(Therm2);
+        latest_t2 = getFahrenheit(Therm2);
+        latest_t2 = constrain(latest_t2,-10.0,250.0);
+//        Serial.println(latest_t2);
+//      } else {
+//        Serial.println("No Therm2");
+      }
+    } else {
+      Serial.println("No Thermomathings");
+      latest_t1 = latest_t2 = -10.0;
+    }
 
+}
 
 void countBirds(){
 
