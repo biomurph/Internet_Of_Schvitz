@@ -31,6 +31,7 @@
 */
 
 #include <ESP8266WiFi.h>
+#include <WiFiUdp.h>
 #include "Adafruit_MQTT.h"
 #include "Adafruit_MQTT_Client.h"
 #include <OneWire.h>
@@ -38,6 +39,7 @@
 #include <Wire.h> // SDA 2>3 SCL 14>2
 #include "IOS_Defines.h"
 #include "MQTT_Config.h"
+#include <EEPROM.h>
 
 
 // Thermothing Stuff
@@ -95,6 +97,8 @@ boolean MQTTconnected = false;
 time_t WiFiDisconnectTime;
 time_t MQTTdisconnectTime;
 
+// EEPROM Stuff
+byte EEdress = 0;
 
 // Create an ESP8266 WiFiClient class to connect to the MQTT server.
 WiFiClient client;
@@ -155,7 +159,7 @@ void schvitzLoop(){
     if(schvitzing){
       fadeLEDs();         // fade to t1 reading (inside Sauna)
     } else {
-      LEDwhite();
+      LEDwhite();  
     }
     if(MQTT_connect){
       sendToIO();
@@ -199,3 +203,5 @@ void endSchvitz(){
   printStateToLCD();
   LEDwhite();
 }
+
+
