@@ -83,7 +83,7 @@ int seed0[3] = {0.0,1023.0,1023.0}; // MAX_LED,MIN_LED,MIN_LED};  // red
 int seed1[3] = {1023.0,1023.0,0.0}; // MIN_LED,MIN_LED,MAX_LED};  // blue
 
 int n;  //mutipurpose LCD debugger
-
+int eLog = 0;
 char inChar;  // Serial reads into this
 
 //  Testing related

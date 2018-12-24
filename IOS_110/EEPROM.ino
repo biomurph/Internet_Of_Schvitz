@@ -18,10 +18,11 @@ void writeEvent(){
   EEPROM.write(EEdress,byte(hour())); EEdress++;
   EEPROM.write(EEdress,byte(minute())); EEdress++;
   EEPROM.write(EEdress,byte(second())); EEdress++;
-  bitWrite(e, 0, WiFi_Connected);
-  bitWrite(e, 3, MQTT_Connected);
-  bitWrite(e, 4, NTP_Set); 
-  bitWrite(e, 7, NTP_Sync);
+  bitWrite(e, 3, WiFi_Connected);
+  bitWrite(e, 2, MQTT_Connected);
+  bitWrite(e, 1, NTP_Set); 
+  bitWrite(e, 0, NTP_Sync);
+  eLog = int(e);
   EEPROM.write(EEdress,e); EEdress++; // +4
   if(EEdress > 251){ EEdress = 0x01; }
   EEPROM.write(0,EEdress);
@@ -36,14 +37,15 @@ void readEvents(){
     Serial.println("No Errors!");
     return;
   }
+  Serial.println("3=WiFi, 2=MQTT, 1=NTP_Set, 0=NTP_Sync");
   for(int i=1; i<EEdress; i+=4){
     for(int j=0; j<4; j++){
       b[j] = EEPROM.read(i+j);
     }
     Serial.print(b[0],DEC); Serial.print(":");
     Serial.print(b[1],DEC); Serial.print(":");
-    Serial.print(b[2],DEC); Serial.print(" 0x");
-    Serial.print(b[3],HEX); Serial.println();
+    Serial.print(b[2],DEC); Serial.print(" b");
+    Serial.print(b[3],BIN); Serial.println();
   }
 }
 

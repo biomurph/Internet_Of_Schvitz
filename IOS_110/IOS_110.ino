@@ -58,6 +58,7 @@ Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO
 Adafruit_MQTT_Publish insideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/internet-of-schvitz.insidesauna");
 Adafruit_MQTT_Publish outsideSauna = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/internet-of-schvitz.outsidesauna");
 Adafruit_MQTT_Publish heaterCurrent = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/internet-of-schvitz.heatercurrent");
+Adafruit_MQTT_Publish errorLog = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME "/feeds/internet-of-schvitz.errorlog");
 
 /*************************** Sketch Code ************************************/
 

@@ -7,9 +7,9 @@
  */
  
 boolean LCD_initialised = false;
-int errors = int((getEEdress()-1)/4);
 
 void printStateToLCD(){ 
+int errors = int(getEEdress()-1)/4;
   LCD_Command(CLEAR_DISP_CMD);    // CLEAR DISPLAY
   LCD_Command(HOME_CMD);    // MOVE HOME
   
@@ -22,18 +22,18 @@ void printStateToLCD(){
     }
 
   LCD_format(1,0x0F);
-  LCD_printInt(NTP_Sync);
-  LCD_printInt(MQTT_Connected);
   LCD_printInt(WiFi_Connected);
+  LCD_printInt(MQTT_Connected);
+  LCD_printInt(NTP_Sync);
   LCD_printInt(errors);
   LCD_format(1,0x00);
   LCD_printStr("in"); // t1
   if(t1){
     LCD_printInt(int(latest_t1));
   } else {
-    LCD_printStr("XX");
+    LCD_printStr("XX ");
   }
-  LCD_format(1,0x09);
+  LCD_format(1,0x07);
   LCD_printStr("out");  // t2
   if(t2){
     LCD_printInt(int(latest_t2));

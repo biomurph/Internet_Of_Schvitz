@@ -20,6 +20,11 @@ void sendToIO(){
   } else {
 //    Serial.println(F("IO: t1 OK!"));
   }
+  if (! errorLog.publish(eLog)) {
+    Serial.println(F("IO: errorLog Failed"));
+  } else {
+//    Serial.println(F("IO: errorLog OK!"));
+  }
 }
 
 boolean WiFiConnect(){

@@ -84,7 +84,7 @@ void checkSerial(){
         readEvents();
         break;
       case 'g':
-        Serial.print((getEEdress()-1)/4,DEC); Serial.println(" errors");
+        Serial.print("You have "); Serial.print((getEEdress()-1)/4,DEC); Serial.println(" errors");
         break;
       case 'n':
         printTimeData();

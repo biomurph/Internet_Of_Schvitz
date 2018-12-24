@@ -18,10 +18,10 @@ void getAndSyncNTP(){
       setSyncProvider(getNtpTime);
     } else {
       setSyncInterval(300); // sync the time every 5 min
-      NTP_Sync = true;
+//      NTP_Sync = true;
       NTP_Set = true;
       writeEvent();
-      printStateToLCD();
+//      printStateToLCD();
       return;
     }
   }
@@ -46,7 +46,7 @@ time_t getNtpTime()
   Serial.println(ntpServerIP);
   sendNTPpacket(ntpServerIP);
   uint32_t beginWait = millis();
-  while (millis() - beginWait < 1500) {
+  while (millis() - beginWait < 5000) {
     int size = Udp.parsePacket();
     if (size >= NTP_PACKET_SIZE) {
       Serial.println("Receive NTP Response");
@@ -57,10 +57,19 @@ time_t getNtpTime()
       secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
       secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
       secsSince1900 |= (unsigned long)packetBuffer[43];
+      if(!NTP_Sync){
+        NTP_Sync = true; printStateToLCD(); writeEvent();
+      }
+      if(!NTP_Set){
+        NTP_Set = true; printStateToLCD(); writeEvent();
+      }
       return secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR;
     }
   }
   Serial.println("No NTP Response :-(");
+  NTP_Sync = false;
+  printStateToLCD();
+  writeEvent();
   return 0; // return 0 if unable to get the time
 }
 
