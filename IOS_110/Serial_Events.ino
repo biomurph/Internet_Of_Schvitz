@@ -1,17 +1,22 @@
 
 
 void printRules(){
-        Serial.println("\nInternet Of Schvitz  v1.0.0");
+        Serial.println("\nInternet Of Schvitz  v1.1.0");
         Serial.println("Press 'a' to get raw ADC reading");
         Serial.println("Press 't' to start test");
         Serial.println("Press 'z' to stop test");
-        Serial.println("Press 'x' to soft reset");
+        Serial.println("Press 'x' to end schvitz");
         Serial.println("Press 'i' to run currentOnly()");
         Serial.println("Press 's' to schvitz!");
         Serial.println("Press 'b' to find 1 wire temp sensors");
         Serial.println("Press 'd' to measure degrees");
         Serial.println("Press 'm' to check or connect to MQTT");
         Serial.println("Press 'p' to publish data to MQTT");
+        Serial.println("Press 'e' to erase EEPROM");
+        Serial.println("Press 'r' to read EEPROM");
+        Serial.println("Press 'g' to get EEdress");
+        Serial.println("Press 'n' to get time info");
+        
         Serial.println("Press '?' to print this again");
 }
 
@@ -20,8 +25,8 @@ void printToSerial(){
   Serial.print(latest_t1); Serial.print("\t");
   Serial.print(latest_t2); Serial.print("\t");
   Serial.print(Irms); Serial.print("\t");
-  
-  Serial.println();
+  printTimeData();
+//  Serial.println();
 }
 
 void checkSerial(){
@@ -65,13 +70,30 @@ void checkSerial(){
         printData(Therm2);
         break;
       case 'm':
-        MQTT_connect();
+        MQTTconnect();
         break;
       case 'p':
         sendToIO();
+        break;
+      case 'e':
+        Serial.print("Erasing EEPROM ...");
+        EEerace();
+        Serial.println("Done!");
+        break;
+      case 'r':
+        readEvents();
+        break;
+      case 'g':
+        Serial.print((getEEdress()-1)/4,DEC); Serial.println(" errors");
+        break;
+      case 'n':
+        printTimeData();
         break;
       default: Serial.print("echo "); Serial.println(inChar);
         break;
     }
   }
 }
+
+
+

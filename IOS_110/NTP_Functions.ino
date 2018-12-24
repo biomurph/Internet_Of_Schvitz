@@ -1,12 +1,31 @@
 
 void getAndSyncNTP(){
+  if(WiFi.status() != WL_CONNECTED){
+    if(WiFi_Connected){  // just set this once
+      WiFi_Connected = false;
+      writeEvent();
+    }
+    return;
+  }
+  NTP_Sync = false;
   Serial.println("Starting UDP");
-  Udp.begin(localPort);
   Serial.print("Local port: ");
   Serial.println(Udp.localPort());
-  Serial.println("waiting for sync");
-  setSyncProvider(getNtpTime);
-  setSyncInterval(600); // sync the time every 60 seconds
+  uint32_t beginWait = millis();
+  while (millis() - beginWait < 20000) {
+    if(timeStatus() != timeSet){
+      Serial.println("waiting for sync");
+      setSyncProvider(getNtpTime);
+    } else {
+      setSyncInterval(300); // sync the time every 5 min
+      NTP_Sync = true;
+      NTP_Set = true;
+      writeEvent();
+      printStateToLCD();
+      return;
+    }
+  }
+  writeEvent();
 }
 
 /*-------- NTP code ----------*/
@@ -68,3 +87,40 @@ void sendNTPpacket(IPAddress &address)
   Udp.endPacket();
 }
 
+
+void printTimeData(){
+  // display of the time
+  Serial.print(hour());
+  printDigits(minute());
+  printDigits(second());
+  Serial.print(" ");
+  Serial.print(day());
+  Serial.print(" ");
+  Serial.print(month());
+  Serial.print(" ");
+  Serial.print(year()); 
+  Serial.print(" ");
+  switch(timeStatus()){
+    case 2:
+      Serial.println("Time Set");
+      break;
+    case 1:
+      Serial.println("Time Needs Sync");
+      break;
+    case 0:
+      Serial.println("Time Not Set");
+      break;
+    default:
+      Serial.println("404");
+      break;
+  }
+  
+}
+
+void printDigits(int digits){
+  // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
+}

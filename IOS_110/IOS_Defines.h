@@ -54,6 +54,66 @@
 //#define DOUBLE_HEIGHT 0x3C
 //#define SINGLE_HEIGHT 0x38
 
+// Thermothing Stuff
+#define ONE_WIRE_BUS 2                // Data wire is plugged into this pin
+OneWire oneWire(ONE_WIRE_BUS);        // Setup a oneWire instance
+DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
+int oneWireDevices;                   // Number of temperature devices found
+DeviceAddress Therm1, Therm2;         // using two thermomolators
+boolean t1 = false;                   // used to tell if thermathing 1 is attached
+boolean t2 = false;                   // used to tell if thermathing 2 is attached
+float latest_t1 = 0.0;                // arbitrary temp to start
+float last_t1 = 0.0;
+float latest_t2 = 0.0;                // arbitrary temp to start
+float last_t2 = 0.0;
 
+//  Sauna Stuff
+boolean schvitzing = false;
+int HEATERstate = OFF;
+unsigned long schvitzTime;
+long schvinterval = 20000; // milliseconds
+
+// LED Stuff
+const long blinkTime = 500;
+int rgb = 0;
+int targetFade = 0;
+int targetPWM[3] = {0,0,0};
+int targetLED[3] = {LCD_RED,LCD_GREEN,LCD_BLUE};
+int seed0[3] = {0.0,1023.0,1023.0}; // MAX_LED,MIN_LED,MIN_LED};  // red
+int seed1[3] = {1023.0,1023.0,0.0}; // MIN_LED,MIN_LED,MAX_LED};  // blue
+
+int n;  //mutipurpose LCD debugger
+
+char inChar;  // Serial reads into this
+
+//  Testing related
+boolean testing = false;
+unsigned int testTime;
+int testInterval = 5000;
+int rawADC;
+
+
+
+// AC current related
+double lastI = 0;
+double Irms = 0;
+float Irms10x;
+unsigned long sample, startTime;
+int newSample;
+int sampleCount = 0;
+double sumI = 0;
+
+// WiFi Stuff
+boolean WiFi_Connected = false;
+boolean MQTT_Connected = false;
+//time_t WiFiDisconnectTime;
+//time_t MQTTdisconnectTime;
+
+// EEPROM Stuff
+byte EEdress = 0;
+
+//NTP Stuff
+boolean NTP_Sync = false;
+boolean NTP_Set = false;
 
 

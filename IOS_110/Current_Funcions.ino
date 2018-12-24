@@ -25,6 +25,7 @@ float calcIrms(){
 //  Serial.print(Irms); Serial.print("\t");
 //  Serial.print(Irms); Serial.print("\t");
 //  Serial.println();
+  Irms10x = Irms*10.0;
   return Irms;
 }
 
@@ -82,5 +83,4 @@ void readAndPrintIsensor(){
  * 
  * 
  * 
- */
  */

@@ -30,6 +30,7 @@
 
 */
 
+#include <TimeLib.h>
 #include <ESP8266WiFi.h>
 #include <WiFiUdp.h>
 #include "Adafruit_MQTT.h"
@@ -38,67 +39,9 @@
 #include <DallasTemperature.h>
 #include <Wire.h> // SDA 2>3 SCL 14>2
 #include "IOS_Defines.h"
-#include "MQTT_Config.h"
+#include "Network.h"
 #include <EEPROM.h>
 
-
-// Thermothing Stuff
-#define ONE_WIRE_BUS 2                // Data wire is plugged into this pin
-OneWire oneWire(ONE_WIRE_BUS);        // Setup a oneWire instance
-DallasTemperature sensors(&oneWire);  // Pass our oneWire reference to Dallas Temperature.
-int oneWireDevices;                   // Number of temperature devices found
-DeviceAddress Therm1, Therm2;         // using two thermomolators
-boolean t1 = false;                   // used to tell if thermathing 1 is attached
-boolean t2 = false;                   // used to tell if thermathing 2 is attached
-float latest_t1 = 0.0;                // arbitrary temp to start
-float last_t1 = 0.0;
-float latest_t2 = 0.0;                // arbitrary temp to start
-float last_t2 = 0.0;
-
-//  Sauna Stuff
-boolean schvitzing = false;
-int HEATERstate = OFF;
-unsigned long schvitzTime;
-long schvinterval = 20000; // milliseconds
-
-// LED Stuff
-const long blinkTime = 500;
-int rgb = 0;
-int targetFade = 0;
-int targetPWM[3] = {0,0,0};
-int targetLED[3] = {LCD_RED,LCD_GREEN,LCD_BLUE};
-int seed0[3] = {0.0,1023.0,1023.0}; // MAX_LED,MIN_LED,MIN_LED};  // red
-int seed1[3] = {1023.0,1023.0,0.0}; // MIN_LED,MIN_LED,MAX_LED};  // blue
-
-int n;  //mutipurpose LCD debugger
-
-char inChar;  // Serial reads into this
-
-//  Testing related
-boolean testing = false;
-unsigned int testTime;
-int testInterval = 5000;
-int rawADC;
-
-
-
-// AC current related
-double lastI = 0;
-double Irms = 0;
-float Irms10x;
-unsigned long sample, startTime;
-int newSample;
-int sampleCount = 0;
-double sumI = 0;
-
-// WiFi Stuff
-boolean WiFiConnected = false;
-boolean MQTTconnected = false;
-time_t WiFiDisconnectTime;
-time_t MQTTdisconnectTime;
-
-// EEPROM Stuff
-byte EEdress = 0;
 
 // Create an ESP8266 WiFiClient class to connect to the MQTT server.
 WiFiClient client;
@@ -123,9 +66,9 @@ Adafruit_MQTT_Publish heaterCurrent = Adafruit_MQTT_Publish(&mqtt, AIO_USERNAME 
 //void MQTT_connect();
 
 void setup() {
-  Serial.begin(230400);
+  Serial.begin(115200);
   EEPROM.begin(256);  // set aside space for storing error times and codes
-  getEEdress();     // get ready to place data in next available EEPROM address
+  getEEdress();       // get ready to place error data in next available EEPROM address
   Wire.begin();       // begin OneWire
   sensors.begin();    // begin Dallas tempo sensers
   setThings();        // pin directions, LED color
@@ -134,7 +77,11 @@ void setup() {
   countBirds();       // get report of oneWire devices on the wire
   getTemps();         // get the first temp readings
   WiFiConnect();      // try to connect to the WiFi access point
+  Udp.begin(localPort);
+  getAndSyncNTP();    // get the latest time from NTP server
+  MQTTconnect();     // try to connect to the IO
   printStateToLCD();  // print latest info to the LCD
+  
 
 }
 
@@ -152,16 +99,16 @@ void loop()
 void schvitzLoop(){
   if(millis() - schvitzTime >= schvinterval){
     schvitzTime = millis();
-    getTemps();           // get temp readings
-    Irms10x = calcIrms()*10.0;
+    getTemps();                 // get temp readings
+    calcIrms();  //might be useful for graphing on the AIO
     printToSerial();
-    printStateToLCD();    // print latest info to LCD
+    printStateToLCD();          // print latest info to LCD
     if(schvitzing){
-      fadeLEDs();         // fade to t1 reading (inside Sauna)
+      fadeLEDs();               // fade to t1 reading (inside Sauna) from blue to red
     } else {
       LEDwhite();  
     }
-    if(MQTT_connect){
+    if(MQTT_Connected){
       sendToIO();
     }
   }

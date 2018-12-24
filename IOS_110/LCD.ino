@@ -5,23 +5,14 @@
  * 20 characters by 2 lines
  * 
  */
-
-byte LCD_status;
+ 
 boolean LCD_initialised = false;
-
+int errors = int((getEEdress()-1)/4);
 
 void printStateToLCD(){ 
   LCD_Command(CLEAR_DISP_CMD);    // CLEAR DISPLAY
   LCD_Command(HOME_CMD);    // MOVE HOME
-  if(!WiFiConnected){
-    int timeOffLine = (millis()-WiFiDisconnectTime)/1000;
-    LCD_printStr("WiFi Error ");
-    LCD_printInt(timeOffLine);
-  }else if(!MQTTconnected){
-    int timeOffLine = (millis()-MQTTdisconnectTime)/1000;
-    LCD_printStr("MQTT Error ");
-    LCD_printInt(timeOffLine);
-  }else{
+  
     if(schvitzing){
       LCD_printStr("Schvitzing! :)");
       LCD_printFloat(Irms);
@@ -29,24 +20,31 @@ void printStateToLCD(){
     } else {
       LCD_printStr("Not Schvitzing :(");
     }
-  }
-  LCD_format(1,0x01);
+
+  LCD_format(1,0x0F);
+  LCD_printInt(NTP_Sync);
+  LCD_printInt(MQTT_Connected);
+  LCD_printInt(WiFi_Connected);
+  LCD_printInt(errors);
+  LCD_format(1,0x00);
   LCD_printStr("in"); // t1
   if(t1){
-    LCD_printFloat(latest_t1);
+    LCD_printInt(int(latest_t1));
   } else {
-    LCD_printStr("XXxX");
+    LCD_printStr("XX");
   }
-  LCD_format(1,0x0B);
+  LCD_format(1,0x09);
   LCD_printStr("out");  // t2
   if(t2){
-    LCD_printFloat(latest_t2);
+    LCD_printInt(int(latest_t2));
   } else {
-    LCD_printStr("XXxX");
+    LCD_printStr("XX");
   }
 }
 
-
+/* --------------------
+ * in-XX--out-XX--NMWee  
+ */
 
 // send a command to the LCD screen
 void LCD_Command(byte data){
@@ -153,15 +151,15 @@ void ST7036_init(){
   Wire.write(CLEAR_DISP_CMD);    // CLEAR DISPLAY
   Wire.write(HOME_CMD);    // MOVE HOME
   Wire.write(0x06);    //Cursor move on, Display shift off
-//  checkWireStatus(Wire.endTransmission());
-  Wire.endTransmission();
+  checkWireStatus(Wire.endTransmission());
+//  Wire.endTransmission();
 
    if(LCD_initialised){ // use checkWireStatus to run this splash screen
      LCD_Command(HOME_CMD);
      LCD_printStr("Internet Of Schvitz");
      LCD_Command(LINE_2);
-     LCD_printStr("v 1.0.0");
-     delay(5000);
+     LCD_printStr("v 1.1.0");
+     delay(2000);
    } else {
      Serial.println("LCD not initialized");
    }
@@ -181,13 +179,13 @@ void LCD_format(int l, byte pos){
 }
 
 // look for LCD I2C errors
-//void checkWireStatus(int stat){
-//
-//  if ( stat == 0 )
-//   {
-//      LCD_initialised = true;
-//   }else{
-//    Serial.print(" ! LCD Status "); Serial.println(LCD_status,DEC);
-//    LCD_initialised = false;
-//   }
-//}
+void checkWireStatus(int stat){
+
+  if ( stat == 0 )
+   {
+      LCD_initialised = true;
+   }else{
+    Serial.print(" ! LCD Status "); Serial.println(stat,DEC);
+    LCD_initialised = false;
+   }
+}
