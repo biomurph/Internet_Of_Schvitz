@@ -1,31 +1,27 @@
 
-void getAndSyncNTP(){
-  if(WiFi.status() != WL_CONNECTED){
-    if(WiFi_Connected){  // just set this once
-      WiFi_Connected = false;
-      writeEvent();
-    }
+void setAndSyncNTP(){
+  NTP_Sync = false;
+  NTP_Set = false;
+  if(!checkWiFi()){
     return;
   }
-  NTP_Sync = false;
+
   Serial.println("Starting UDP");
   Serial.print("Local port: ");
   Serial.println(Udp.localPort());
   uint32_t beginWait = millis();
   while (millis() - beginWait < 20000) {
-    if(timeStatus() != timeSet){
+    if(timeStatus() == timeNotSet){
       Serial.println("waiting for sync");
       setSyncProvider(getNtpTime);
+      setSyncInterval(300000); // sync the time every
     } else {
-      setSyncInterval(300); // sync the time every 5 min
-//      NTP_Sync = true;
       NTP_Set = true;
-      writeEvent();
-//      printStateToLCD();
+      logEvent = true;
       return;
     }
   }
-  writeEvent();
+  logEvent = true;
 }
 
 /*-------- NTP code ----------*/
@@ -46,9 +42,9 @@ time_t getNtpTime()
   Serial.println(ntpServerIP);
   sendNTPpacket(ntpServerIP);
   uint32_t beginWait = millis();
-  while (millis() - beginWait < 5000) {
-    int size = Udp.parsePacket();
-    if (size >= NTP_PACKET_SIZE) {
+  while (millis() - beginWait < 1500) {
+    int amount = Udp.parsePacket();
+    if (amount >= NTP_PACKET_SIZE) {
       Serial.println("Receive NTP Response");
       Udp.read(packetBuffer, NTP_PACKET_SIZE);  // read packet into the buffer
       unsigned long secsSince1900;
@@ -57,19 +53,14 @@ time_t getNtpTime()
       secsSince1900 |= (unsigned long)packetBuffer[41] << 16;
       secsSince1900 |= (unsigned long)packetBuffer[42] << 8;
       secsSince1900 |= (unsigned long)packetBuffer[43];
-      if(!NTP_Sync){
-        NTP_Sync = true; printStateToLCD(); writeEvent();
-      }
-      if(!NTP_Set){
-        NTP_Set = true; printStateToLCD(); writeEvent();
-      }
+        NTP_Sync = true;
+				logEvent = true;
       return secsSince1900 - 2208988800UL + timeZone * SECS_PER_HOUR;
     }
   }
   Serial.println("No NTP Response :-(");
   NTP_Sync = false;
-  printStateToLCD();
-  writeEvent();
+  logEvent = true;
   return 0; // return 0 if unable to get the time
 }
 
@@ -107,7 +98,7 @@ void printTimeData(){
   Serial.print(" ");
   Serial.print(month());
   Serial.print(" ");
-  Serial.print(year()); 
+  Serial.print(year());
   Serial.print(" ");
   switch(timeStatus()){
     case 2:
@@ -123,7 +114,7 @@ void printTimeData(){
       Serial.println("404");
       break;
   }
-  
+
 }
 
 void printDigits(int digits){

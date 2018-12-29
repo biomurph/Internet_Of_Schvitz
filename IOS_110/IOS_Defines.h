@@ -1,13 +1,13 @@
 
 
 /*
- *  PINS  
+ *  PINS
  */
  // THING
 //#define HEATER 5     // Sauna Power Control
 //#define WIRE  13   // 1Wire temp sensor com
 //#define PWR 4    // toggle switch for turning it all on
-//#define LCD_RED 12    // RED LED backlight 
+//#define LCD_RED 12    // RED LED backlight
 //#define LCD_GREEN 16  // GREEN LED backlight
 //#define LCD_BLUE  15  // BLUE LED backlight
 
@@ -16,7 +16,7 @@
 #define HEATER 0     // Sauna Power Control
 #define WIRE  2   // 1Wire temp sensor com
 #define PWR 16    // toggle switch for turning it all on
-#define LCD_RED 14    // RED LED backlight 
+#define LCD_RED 14    // RED LED backlight
 #define LCD_GREEN 13  // GREEN LED backlight
 #define LCD_BLUE  12  // BLUE LED backlight
 
@@ -34,7 +34,7 @@
 
 /*
  * stuff to set the AC current sensor
- * 
+ *
  */
 //#define CALIBRATION 64.3  // see AC_Current_Notes.h
 //#define PRIMARY_V 205.0   // empirically tested at measurement site
@@ -44,7 +44,7 @@
 #define TEST_FLOAT 10.24
 
 // LCD Display stuff
-#define LCD_ADDRESS 0x3C  // 0x78 
+#define LCD_ADDRESS 0x3C  // 0x78
 #define DISP_CMD  0x00
 #define SET_DDRAM_CMD  = 0x80
 #define RAM_WRITE_CMD 0x40
@@ -70,7 +70,7 @@ float last_t2 = 0.0;
 //  Sauna Stuff
 boolean schvitzing = false;
 int HEATERstate = OFF;
-unsigned long schvitzTime;
+unsigned long schvitzTime = 0;
 long schvinterval = 20000; // milliseconds
 
 // LED Stuff
@@ -85,6 +85,7 @@ int seed1[3] = {1023.0,1023.0,0.0}; // MIN_LED,MIN_LED,MAX_LED};  // blue
 int n;  //mutipurpose LCD debugger
 int eLog = 0;
 char inChar;  // Serial reads into this
+boolean logEvent = false;
 
 //  Testing related
 boolean testing = false;
@@ -115,5 +116,3 @@ byte EEdress = 0;
 //NTP Stuff
 boolean NTP_Sync = false;
 boolean NTP_Set = false;
-
-

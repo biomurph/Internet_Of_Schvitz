@@ -1,4 +1,14 @@
 
+// RECORD EVENTS TO EEPROM FOR POST CRASH BLACK BOX RECON
+
+
+boolean checkEvents(){
+	if(logEvent){
+		logEvent = false;
+		writeEvent();
+		printStateToLCD();
+	}
+}
 
 byte getEEdress(){
   byte b = EEPROM.read(0);
@@ -19,11 +29,11 @@ void writeEvent(){
   EEPROM.write(EEdress,byte(minute())); EEdress++;
   EEPROM.write(EEdress,byte(second())); EEdress++;
   bitWrite(e, 3, WiFi_Connected);
-  bitWrite(e, 2, MQTT_Connected);
-  bitWrite(e, 1, NTP_Set); 
-  bitWrite(e, 0, NTP_Sync);
+  bitWrite(e, 2, NTP_Set);
+  bitWrite(e, 1, NTP_Sync);
+  bitWrite(e, 0, MQTT_Connected);
   eLog = int(e);
-  EEPROM.write(EEdress,e); EEdress++; // +4
+  EEPROM.write(EEdress,e); EEdress++; // +4 total
   if(EEdress > 251){ EEdress = 0x01; }
   EEPROM.write(0,EEdress);
   EEPROM.commit();
@@ -31,13 +41,13 @@ void writeEvent(){
 
 void readEvents(){
   byte b[4];
-  Serial.print("Reading EEPROM to EEdress "); Serial.print(EEdress,DEC);
-  Serial.print(" 0x"); Serial.println(EEPROM.read(0),HEX);
+  Serial.print("Reading EEPROM to EEdress "); Serial.println(EEdress,DEC);
+//  Serial.print(" 0x"); Serial.println(EEPROM.read(0),HEX);
   if(EEdress < 5){
-    Serial.println("No Errors!");
+    Serial.println("No Events!");
     return;
   }
-  Serial.println("3=WiFi, 2=MQTT, 1=NTP_Set, 0=NTP_Sync");
+  Serial.println("3=WiFi, 2=NTP_Set, 1=NTP_Sync, 0= MQTT");
   for(int i=1; i<EEdress; i+=4){
     for(int j=0; j<4; j++){
       b[j] = EEPROM.read(i+j);
@@ -56,5 +66,3 @@ void EEerace(){
   EEPROM.commit();
   getEEdress();
 }
-
-

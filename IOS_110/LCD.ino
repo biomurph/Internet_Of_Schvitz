@@ -9,7 +9,8 @@
 boolean LCD_initialised = false;
 
 void printStateToLCD(){ 
-int errors = int(getEEdress()-1)/4;
+//        Serial.println("in LCD");
+  int errors = int(getEEdress()-1)/4;
   LCD_Command(CLEAR_DISP_CMD);    // CLEAR DISPLAY
   LCD_Command(HOME_CMD);    // MOVE HOME
   
@@ -40,6 +41,7 @@ int errors = int(getEEdress()-1)/4;
   } else {
     LCD_printStr("XX");
   }
+//  Serial.println("leaving LCD");
 }
 
 /* --------------------

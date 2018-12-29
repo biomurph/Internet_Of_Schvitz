@@ -6,6 +6,7 @@
 
   Bath Controller par excellence
 
+If you're using the SparkFun THING
   THING PIN ASSIGNMENTS
   A0 = Sauna current monitor
   2 = SDA for LCD control
@@ -17,7 +18,8 @@
   16 = LCD_GREEN LED backlight
   15 = LCD_BLUE LED backlight
 
-  FEATHER PIN ASSIGNMENTS
+If you're using the Adafruit HUAZZAH
+  HUZZAH PIN ASSIGNMENTS
   A0 = Sauna current monitor
   4 = SDA for LCD control
   5 = SCL for LCD control
@@ -78,11 +80,12 @@ void setup() {
   countBirds();       // get report of oneWire devices on the wire
   getTemps();         // get the first temp readings
   WiFiConnect();      // try to connect to the WiFi access point
+  checkEvents();
   Udp.begin(localPort);
-  getAndSyncNTP();    // get the latest time from NTP server
+  setAndSyncNTP();    // get the latest time from NTP server
+  checkEvents();
   MQTTconnect();     // try to connect to the IO
-  printStateToLCD();  // print latest info to the LCD
-  
+  checkEvents();
 
 }
 
@@ -95,23 +98,23 @@ void loop()
 
   checkSerial();    // go see if we have serial stuff to do
 
+	checkEvents();		// if something happened, log it in EEPROM
+
 }
 
 void schvitzLoop(){
   if(millis() - schvitzTime >= schvinterval){
     schvitzTime = millis();
-    getTemps();                 // get temp readings
-    calcIrms();  //might be useful for graphing on the AIO
+    getTemps();                 // read thermothings
+    calcIrms();                 // read current data
     printToSerial();
     printStateToLCD();          // print latest info to LCD
     if(schvitzing){
       fadeLEDs();               // fade to t1 reading (inside Sauna) from blue to red
     } else {
-      LEDwhite();  
+      LEDwhite();
     }
-    if(MQTT_Connected){
-      sendToIO();
-    }
+    sendToIO();
   }
 }
 
@@ -151,5 +154,3 @@ void endSchvitz(){
   printStateToLCD();
   LEDwhite();
 }
-
-
