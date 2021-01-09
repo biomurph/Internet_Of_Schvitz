@@ -6,6 +6,8 @@
 
   Bath Controller par excellence
 
+  Updated January 2021 to work at 71 Hancock
+
 If you're using the SparkFun THING
   THING PIN ASSIGNMENTS
   A0 = Sauna current monitor
@@ -126,7 +128,13 @@ void setThings(){
 
 }
 
-
+// control the heat of the sauna
+void checkTemps(){
+  if(t1 >= MAX_TEMP){
+    digitalWrite(HEATER,OFF);
+  }
+  if(t1 < 
+}
 
 
 void checkPWRswitch(){
